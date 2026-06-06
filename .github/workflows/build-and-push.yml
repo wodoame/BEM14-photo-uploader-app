@@ -1,0 +1,61 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: temurin
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY_NAME }}
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:latest .
+          docker push $REGISTRY/$REPOSITORY:latest
+
+      - name: Generate taskdef.json from current ECS task definition
+        env:
+          TASK_FAMILY: ${{ vars.ECS_TASK_DEFINITION_FAMILY }}
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_FAMILY" \
+            --query 'taskDefinition' \
+            --output json \
+          | jq 'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)' \
+          | jq '.containerDefinitions[0].image = "<IMAGE1_NAME>"' \
+          > deploy/taskdef.json
+
+      - name: Package and upload deploy bundle
+        env:
+          ARTIFACT_BUCKET: ${{ vars.ARTIFACT_BUCKET_NAME }}
+        run: |
+          cd deploy
+          zip -r deploy-bundle.zip appspec.yaml taskdef.json
+          aws s3 cp deploy-bundle.zip s3://$ARTIFACT_BUCKET/deploy/deploy-bundle.zip
