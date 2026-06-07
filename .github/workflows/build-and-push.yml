@@ -40,21 +40,53 @@ jobs:
           docker build -t $REGISTRY/$REPOSITORY:latest .
           docker push $REGISTRY/$REPOSITORY:latest
 
-      - name: Generate taskdef.json from current ECS task definition
+      - name: Populate taskdef.json from CloudFormation
         env:
-          TASK_FAMILY: ${{ vars.ECS_TASK_DEFINITION_FAMILY }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          STACK_NAME: ${{ vars.STACK_NAME }}
         run: |
-          aws ecs describe-task-definition \
-            --task-definition "$TASK_FAMILY" \
-            --query 'taskDefinition' \
-            --output json \
-          | jq 'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)' \
-          | jq '.containerDefinitions[0].image = "<IMAGE1_NAME>"' \
-          > deploy/taskdef.json
+          IAM_STACK=$(aws cloudformation list-stack-resources --stack-name $STACK_NAME \
+            --query "StackResourceSummaries[?LogicalResourceId=='IAMStack'].PhysicalResourceId" \
+            --output text)
+          DB_STACK=$(aws cloudformation list-stack-resources --stack-name $STACK_NAME \
+            --query "StackResourceSummaries[?LogicalResourceId=='DatabaseStack'].PhysicalResourceId" \
+            --output text)
+
+          EXEC_ROLE=$(aws cloudformation describe-stacks --stack-name $IAM_STACK \
+            --query "Stacks[0].Outputs[?OutputKey=='ECSTaskExecutionRoleArn'].OutputValue" --output text)
+          TASK_ROLE=$(aws cloudformation describe-stacks --stack-name $IAM_STACK \
+            --query "Stacks[0].Outputs[?OutputKey=='ECSTaskRoleArn'].OutputValue" --output text)
+
+          DB_HOST=$(aws cloudformation describe-stacks --stack-name $DB_STACK \
+            --query "Stacks[0].Outputs[?OutputKey=='DBEndpoint'].OutputValue" --output text)
+          DB_PORT=$(aws cloudformation describe-stacks --stack-name $DB_STACK \
+            --query "Stacks[0].Outputs[?OutputKey=='DBPort'].OutputValue" --output text)
+          DB_NAME=$(aws cloudformation describe-stacks --stack-name $DB_STACK \
+            --query "Stacks[0].Outputs[?OutputKey=='DBName'].OutputValue" --output text)
+          DB_SECRET_ARN=$(aws cloudformation describe-stacks --stack-name $DB_STACK \
+            --query "Stacks[0].Outputs[?OutputKey=='DBSecretArn'].OutputValue" --output text)
+
+          S3_BUCKET=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+            --query "Stacks[0].Outputs[?OutputKey=='ImageBucketName'].OutputValue" --output text)
+          CF_DOMAIN=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDomainName'].OutputValue" --output text)
+          ARTIFACT_BUCKET=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+            --query "Stacks[0].Outputs[?OutputKey=='ArtifactBucketName'].OutputValue" --output text)
+          echo "ARTIFACT_BUCKET=$ARTIFACT_BUCKET" >> $GITHUB_ENV
+
+          sed -i \
+            -e "s|<ECS_TASK_EXECUTION_ROLE_ARN>|$EXEC_ROLE|g" \
+            -e "s|<ECS_TASK_ROLE_ARN>|$TASK_ROLE|g" \
+            -e "s|<DB_HOST>|$DB_HOST|g" \
+            -e "s|<DB_PORT>|$DB_PORT|g" \
+            -e "s|<DB_NAME>|$DB_NAME|g" \
+            -e "s|<S3_BUCKET>|$S3_BUCKET|g" \
+            -e "s|<CLOUDFRONT_DOMAIN>|$CF_DOMAIN|g" \
+            -e "s|<DB_SECRET_ARN>|$DB_SECRET_ARN|g" \
+            -e "s|<AWS_REGION>|$AWS_REGION|g" \
+            deploy/taskdef.json
 
       - name: Package and upload deploy bundle
-        env:
-          ARTIFACT_BUCKET: ${{ vars.ARTIFACT_BUCKET_NAME }}
         run: |
           cd deploy
           zip -r deploy-bundle.zip appspec.yaml taskdef.json
