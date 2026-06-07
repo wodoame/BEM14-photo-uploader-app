@@ -5,7 +5,7 @@
 # Prerequisites: aws CLI (--profile admin), gh CLI (gh auth login)
 set -e
 
-REPO="wodoame/BEM14-photo-uploader"
+REPO="wodoame/BEM14-photo-uploader-app"
 STACK_NAME="photo-uploader-stack"
 AWS_PROFILE="admin"
 AWS_REGION="us-east-1"
