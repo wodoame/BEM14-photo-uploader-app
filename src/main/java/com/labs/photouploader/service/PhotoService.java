@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -56,6 +57,16 @@ public class PhotoService {
 
     public List<Photo> getAll() {
         return photoRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    public void delete(Long id) {
+        Photo photo = photoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Photo not found: " + id));
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(photo.getS3Key())
+                .build());
+        photoRepository.delete(photo);
     }
 
     public String getCloudFrontDomain() {
