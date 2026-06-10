@@ -1,153 +1,236 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Photo Gallery</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <style>
-        .dropzone {
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            padding: 2rem 1rem;
-            text-align: center;
-            cursor: pointer;
-            background: #fafafa;
-            position: relative;
-            transition: border-color .2s, background .2s;
-        }
-        .dropzone:hover, .dropzone.drag-over {
-            border-color: #0d6efd;
-            background: #f0f5ff;
-        }
-        .dropzone input[type="file"] {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            cursor: pointer;
-            width: 100%;
-            height: 100%;
-        }
-        .dropzone-preview {
-            display: none;
-            width: 100%;
-            max-height: 200px;
-            object-fit: contain;
-            border-radius: 6px;
-            margin-bottom: .5rem;
-        }
-        .gallery-img {
-            width: 100%;
-            aspect-ratio: 4/3;
-            object-fit: cover;
-        }
-        .delete-btn {
-            position: absolute;
-            top: .5rem;
-            right: .5rem;
-            opacity: 0;
-            transition: opacity .15s;
-        }
-        .photo-card:hover .delete-btn { opacity: 1; }
-    </style>
-</head>
-<body class="bg-light">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Photo Gallery</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+            crossorigin="anonymous"
+        />
+        <style>
+            .dropzone {
+                border: 2px dashed #ccc;
+                border-radius: 8px;
+                padding: 2rem 1rem;
+                text-align: center;
+                cursor: pointer;
+                background: #fafafa;
+                position: relative;
+                transition:
+                    border-color 0.2s,
+                    background 0.2s;
+            }
+            .dropzone:hover,
+            .dropzone.drag-over {
+                border-color: #0d6efd;
+                background: #f0f5ff;
+            }
+            .dropzone input[type="file"] {
+                position: absolute;
+                inset: 0;
+                opacity: 0;
+                cursor: pointer;
+                width: 100%;
+                height: 100%;
+            }
+            .dropzone-preview {
+                display: none;
+                width: 100%;
+                max-height: 200px;
+                object-fit: contain;
+                border-radius: 6px;
+                margin-bottom: 0.5rem;
+            }
+            .gallery-img {
+                width: 100%;
+                aspect-ratio: 4/3;
+                object-fit: cover;
+            }
+            .delete-btn {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                opacity: 0;
+                transition: opacity 0.15s;
+            }
+            .photo-card:hover .delete-btn {
+                opacity: 1;
+            }
+        </style>
+    </head>
+    <body class="bg-light">
+        <nav class="navbar bg-dark" data-bs-theme="dark">
+            <div class="container">
+                <span class="navbar-brand mb-0 h1"
+                    >Photo Gallery Lab Review</span
+                >
+            </div>
+        </nav>
 
-<nav class="navbar bg-dark" data-bs-theme="dark">
-    <div class="container">
-        <span class="navbar-brand mb-0 h1">Photo Gallery</span>
-    </div>
-</nav>
-
-<main class="container my-4">
-
-    <div class="row justify-content-center mb-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Upload a Photo</h5>
-                    <form action="/upload" method="post" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <div class="dropzone" id="dropzone">
-                                <input type="file" name="photo" accept="image/*" required id="fileInput">
-                                <img class="dropzone-preview" id="preview" alt="Preview">
-                                <div id="dropzoneContent">
-                                    <div class="text-muted">
-                                        <span class="text-primary fw-semibold">Click to choose</span> or drag &amp; drop
+        <main class="container my-4">
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Upload a Photo</h5>
+                            <form
+                                action="/upload"
+                                method="post"
+                                enctype="multipart/form-data"
+                            >
+                                <div class="mb-3">
+                                    <div class="dropzone" id="dropzone">
+                                        <input
+                                            type="file"
+                                            name="photo"
+                                            accept="image/*"
+                                            required
+                                            id="fileInput"
+                                        />
+                                        <img
+                                            class="dropzone-preview"
+                                            id="preview"
+                                            alt="Preview"
+                                        />
+                                        <div id="dropzoneContent">
+                                            <div class="text-muted">
+                                                <span
+                                                    class="text-primary fw-semibold"
+                                                    >Click to choose</span
+                                                >
+                                                or drag &amp; drop
+                                            </div>
+                                            <small class="text-secondary"
+                                                >PNG, JPG, WEBP up to 10
+                                                MB</small
+                                            >
+                                        </div>
+                                        <small
+                                            class="text-muted"
+                                            id="filename"
+                                        ></small>
                                     </div>
-                                    <small class="text-secondary">PNG, JPG, WEBP up to 10 MB</small>
                                 </div>
-                                <small class="text-muted" id="filename"></small>
-                            </div>
+                                <div class="mb-3">
+                                    <textarea
+                                        class="form-control"
+                                        name="description"
+                                        placeholder="Add a description…"
+                                        maxlength="500"
+                                        rows="3"
+                                    ></textarea>
+                                </div>
+                                <button
+                                    type="submit"
+                                    class="btn btn-dark w-100"
+                                >
+                                    Upload
+                                </button>
+                            </form>
                         </div>
-                        <div class="mb-3">
-                            <textarea class="form-control" name="description" placeholder="Add a description…" maxlength="500" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-dark w-100">Upload</button>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <p class="text-muted mb-3" th:if="${!photos.isEmpty()}">
-        <span th:text="${photos.size()}"></span> photo(s)
-    </p>
+            <p class="text-muted mb-3" th:if="${!photos.isEmpty()}">
+                <span th:text="${photos.size()}"></span> photo(s)
+            </p>
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" th:if="${!photos.isEmpty()}">
-        <div class="col" th:each="photo : ${photos}">
-            <div class="card shadow-sm h-100 photo-card position-relative">
-                <img th:src="${'https://' + cfDomain + '/' + photo.s3Key}"
-                     th:alt="${photo.description}"
-                     class="card-img-top gallery-img"
-                     loading="lazy">
-                <form th:action="'/delete/' + ${photo.id}" method="post" class="delete-btn">
-                    <button type="submit" class="btn btn-sm btn-danger rounded-circle"
-                            style="width:28px;height:28px;padding:0;line-height:1;" title="Delete">&#x2715;</button>
-                </form>
-                <div class="card-body p-2">
-                    <p class="card-text small text-muted mb-0" th:text="${photo.description}"></p>
+            <div
+                class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"
+                th:if="${!photos.isEmpty()}"
+            >
+                <div class="col" th:each="photo : ${photos}">
+                    <div
+                        class="card shadow-sm h-100 photo-card position-relative"
+                    >
+                        <img
+                            th:src="${'https://' + cfDomain + '/' + photo.s3Key}"
+                            th:alt="${photo.description}"
+                            class="card-img-top gallery-img"
+                            loading="lazy"
+                        />
+                        <form
+                            th:action="'/delete/' + ${photo.id}"
+                            method="post"
+                            class="delete-btn"
+                        >
+                            <button
+                                type="submit"
+                                class="btn btn-sm btn-danger rounded-circle"
+                                style="
+                                    width: 28px;
+                                    height: 28px;
+                                    padding: 0;
+                                    line-height: 1;
+                                "
+                                title="Delete"
+                            >
+                                &#x2715;
+                            </button>
+                        </form>
+                        <div class="card-body p-2">
+                            <p
+                                class="card-text small text-muted mb-0"
+                                th:text="${photo.description}"
+                            ></p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="text-center text-muted py-5" th:if="${photos.isEmpty()}">
-        No photos yet. Upload one above!
-    </div>
+            <div
+                class="text-center text-muted py-5"
+                th:if="${photos.isEmpty()}"
+            >
+                No photos yet. Upload one above!
+            </div>
+        </main>
 
-</main>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"
+        ></script>
+        <script>
+            const dropzone = document.getElementById("dropzone");
+            const fileInput = document.getElementById("fileInput");
+            const preview = document.getElementById("preview");
+            const content = document.getElementById("dropzoneContent");
+            const filename = document.getElementById("filename");
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-<script>
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('fileInput');
-    const preview  = document.getElementById('preview');
-    const content  = document.getElementById('dropzoneContent');
-    const filename = document.getElementById('filename');
+            function showPreview(file) {
+                if (!file) return;
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = "block";
+                content.style.display = "none";
+                filename.textContent = file.name;
+            }
 
-    function showPreview(file) {
-        if (!file) return;
-        preview.src = URL.createObjectURL(file);
-        preview.style.display = 'block';
-        content.style.display = 'none';
-        filename.textContent = file.name;
-    }
-
-    fileInput.addEventListener('change', () => showPreview(fileInput.files[0]));
-    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-    dropzone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropzone.classList.remove('drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            fileInput.files = dt.files;
-            showPreview(file);
-        }
-    });
-</script>
-</body>
+            fileInput.addEventListener("change", () =>
+                showPreview(fileInput.files[0]),
+            );
+            dropzone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropzone.classList.add("drag-over");
+            });
+            dropzone.addEventListener("dragleave", () =>
+                dropzone.classList.remove("drag-over"),
+            );
+            dropzone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropzone.classList.remove("drag-over");
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                    showPreview(file);
+                }
+            });
+        </script>
+    </body>
 </html>
